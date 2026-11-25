@@ -17,7 +17,7 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
@@ -34,3 +34,12 @@ if (!/^\S{1,30}$/.test(USERNAME)) {
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
 writeFileSync(join(OUTPUT_DIR, 'entry.txt'), USERNAME, 'utf8');
+
+// Verify the write landed exactly: read it back and compare byte for
+// byte. A trailing newline or a partial write would still pass the
+// 1–30 character gate but would no longer be exactly the handle, so
+// fail loudly instead of submitting a near-miss.
+const written = readFileSync(join(OUTPUT_DIR, 'entry.txt'), 'utf8');
+if (written !== USERNAME) {
+  throw new Error(`entry.txt mismatch: wrote ${JSON.stringify(USERNAME)}, read back ${JSON.stringify(written)}`);
+}
